@@ -4,7 +4,6 @@ data {
   vector[N] y;
   vector[N] z;
   vector[N] se;
-  vector[N] df;
   vector[J] x;
   int<lower=1, upper=J> expt_id[N];
 }
@@ -23,9 +22,7 @@ transformed parameters {
   b = mu_b + sigma_b * eta_b;
 }
 model {
-  y ~ student_t(df,
-                b[expt_id] + theta[expt_id] .* z,
-                se);
+  y ~ normal(b[expt_id] + theta[expt_id] .* z, se);
   eta_theta ~ normal(0, 1);
   eta_b ~ normal(0, 1);
 }

@@ -203,15 +203,14 @@ y <- c(y0, y1)
 se <- c(se0, se1)
 expt_id <- rep(1:J, 2)
 z <- c(rep(0, J), rep(1, J))  # treatment:  0 = sham, 1 = exposed
-df <- c(n0 - 1, n1 - 1)
 data <- list(
   N = 2 * J,
   J = J,
   y = y,
+  se = se,
   x = x,
   expt_id = expt_id,
-  z = z,
-  df = df
+  z = z
 )
 
 ## Fit a hierarchical model
@@ -288,8 +287,8 @@ summ_abbs <-
     "Rank corr. with truth")
 fake_sim <- function(J, sigma_b, theta_true, sigma_y) {
   b <- rnorm(J, 0, sigma_b)
-  y0 <- rt(J, n0 - 1) * sigma_y + b
-  y1 <- rt(J, n1 - 1) * sigma_y + b + theta_true
+  y0 <- rnorm(J, b, sigma_y)
+  y1 <- rnorm(J, b + theta_true, sigma_y)
   y <- c(y0, y1)
   se <- rep(sigma_y, 2 * J)
   z <- c(rep(0, J), rep(1, J))  # treatment:  0 = sham, 1 = exposed
@@ -309,12 +308,12 @@ fake_sim <- function(J, sigma_b, theta_true, sigma_y) {
   ## inferential summaries
   estimates <- cbind(y1, y1 - y0, apply(theta, 2, mean))
   estimates_025 <-
-    cbind(y1 - qt(0.975, df = n1 - 1) * sigma_y,
-          (y1 - y0) - qt(0.975, df = n0 + n1 - 2) * sqrt(2) * sigma_y,
+    cbind(y1 - 1.96 * sigma_y,
+          (y1 - y0) - 1.96 * sqrt(2) * sigma_y,
           apply(theta, 2, quantile, 0.025))
   estimates_975 <-
-    cbind(y1 + qt(0.975, df = n1 - 1) * sigma_y,
-          (y1 - y0) + qt(0.975, df = n0 + n1 - 2) * sqrt(2) * sigma_y,
+    cbind(y1 + 1.96 * sigma_y,
+          (y1 - y0) + 1.96 * sqrt(2) * sigma_y,
           apply(theta, 2, quantile, 0.975))
   ## statistical properties
   significant <- sign(estimates_025) == sign(estimates_975)
@@ -606,6 +605,41 @@ abline(0, 0, col = "gray")
 points(x, diff, pch = 20)
 for (j in 1:J) {
   lines(rep(x_plot[j], 2), diff[j] + c(-1, 1) * diff_se[j])
+}
+dev.off()
+
+## Fit a (normal) non-measurement error model
+fit_hier <-
+  stan(
+    "chickens-no-corr-hier-non-meas-err.stan",
+    data = data,
+    control = list(adapt_delta = 0.9),
+    refresh = 0
+  )
+print(fit_hier)
+
+theta <- extract(fit_hier)$theta
+theta_hat <- apply(theta, 2, mean)
+theta_se <- apply(theta, 2, sd)
+
+pdf("blackman4j.pdf", height = 3, width = 4.5)
+par(mar = c(3, 3, 2, 1),
+    mgp = c(1.5, .5, 0),
+    tck = -.01)
+plot(
+  range(x),
+  range(y1 - se1, y1 + se1),
+  xlab = "Frequency of magnetic field (Hz)",
+  ylab = "Estimated treatment effect",
+  bty = "l",
+  type = "n",
+  main = "Estimates from hierarchical model",
+  cex.main = .9
+)
+abline(0, 0, col = "gray")
+points(x, theta_hat, pch = 20)
+for (j in 1:J) {
+  lines(rep(x_plot[j], 2), theta_hat[j] + c(-1, 1) * theta_se[j])
 }
 dev.off()
 
