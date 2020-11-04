@@ -149,7 +149,9 @@ data <- list(
   se = se,
   x = x,
   expt_id = expt_id,
-  z = z
+  z = z,
+  diff = diff,
+  diff_se = diff_se
 )
 
 ## Fit a hierarchical model
@@ -332,10 +334,10 @@ for (j in 1:J) {
 dev.off()
 
 
-## Fit a (normal) non-measurement error model
+## Fit a Bayesian metaanalysis on the differences
 fit_hier <-
   stan(
-    "chickens-no-corr-hier-non-meas-err.stan",
+    "chickens-bayesian-metaanalysis-on-differences.stan",
     data = data,
     control = list(adapt_delta = 0.9),
     refresh = 0
@@ -353,17 +355,16 @@ par(mar = c(3, 3, 2, 1),
 plot(
   range(x),
   range(y1 - se1, y1 + se1),
-  xlab = "Study",
+  xlab = "Frequency of magnetic field (Hz)",
   ylab = "Estimated treatment effect",
   bty = "l",
   type = "n",
-  main = "Estimates from plain hierarchical model",
+  main = "Estimates from Bayesian meta-analysis on differences",
   cex.main = .9,
   xaxt='n',
   ylim=c(-1.5,4.5)
 )
 abline(0, 0, col = "gray")
-axis(1, at = c(1,4,8,12,16,20,24))
 points(x, theta_hat, pch = 20)
 for (j in 1:J) {
   lines(rep(x_plot[j], 2), theta_hat[j] + c(-1, 1) * theta_se[j])

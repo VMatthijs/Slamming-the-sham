@@ -210,7 +210,9 @@ data <- list(
   se = se,
   x = x,
   expt_id = expt_id,
-  z = z
+  z = z,
+  diff = diff,
+  diff_se = diff_se
 )
 
 ## Fit a hierarchical model
@@ -608,10 +610,11 @@ for (j in 1:J) {
 }
 dev.off()
 
-## Fit a (normal) non-measurement error model
+
+## Appendix 8: Fit a Bayesian metaanalysis on the differences
 fit_hier <-
   stan(
-    "chickens-no-corr-hier-non-meas-err.stan",
+    "chickens-bayesian-metaanalysis-on-differences.stan",
     data = data,
     control = list(adapt_delta = 0.9),
     refresh = 0
@@ -633,7 +636,7 @@ plot(
   ylab = "Estimated treatment effect",
   bty = "l",
   type = "n",
-  main = "Estimates from hierarchical model",
+  main = "Estimates from Bayesian meta-analysis on differences",
   cex.main = .9
 )
 abline(0, 0, col = "gray")
@@ -642,6 +645,7 @@ for (j in 1:J) {
   lines(rep(x_plot[j], 2), theta_hat[j] + c(-1, 1) * theta_se[j])
 }
 dev.off()
+
 
 ## Appendix 7: Simulation study with raw thetas
 sigma_y <- 0.04
