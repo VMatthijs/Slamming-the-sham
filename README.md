@@ -27,7 +27,7 @@ There are couple of dependencies to install, in order to explore the Bayesian mo
 * First, you need an installation of [R](https://www.r-project.org/) to run our script.
 * Second, you need to have the R library [RStan](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started) installed to run the Stan models from R.
 
-With these dependencies present, it should be possible to run the script `chickens.R` to reproduce the results in this paper.
+With these dependencies present, it should be possible to run the scripts `berlim.R` and `chickens.R` to reproduce the results in this paper.
 
 ## Citation
 
