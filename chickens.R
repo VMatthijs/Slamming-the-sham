@@ -287,22 +287,22 @@ summ_abbs <-
     "Type S error rate",
     "RMS error",
     "Rank corr. with truth")
-fake_sim <- function(J, sigma_b, theta_true, sigma_y) {
-  b <- rnorm(J, 0, sigma_b)
-  y0 <- rnorm(J, b, sigma_y)
-  y1 <- rnorm(J, b + theta_true, sigma_y)
+fake_sim <- function(M, sigma_b, theta_true, sigma_y, model_name) {
+  b <- rnorm(M, 0, sigma_b)
+  y0 <- rnorm(M, b, sigma_y)
+  y1 <- rnorm(M, b + theta_true, sigma_y)
   y <- c(y0, y1)
-  se <- rep(sigma_y, 2 * J)
-  z <- c(rep(0, J), rep(1, J))  # treatment:  0 = sham, 1 = exposed
+  se <- rep(sigma_y, 2 * M)
+  z <- c(rep(0, M), rep(1, M))  # treatment:  0 = sham, 1 = exposed
   data <- list(
-    N = 2 * J,
-    J = J,
+    N = 2 * M,
+    J = M,
     y = y,
-    x = x,
-    expt_id = expt_id,
+    x = x[1:M],
+    expt_id = rep(1:M, 2),
     z = z
   )
-  fit_sim <- sampling(chickens_hier,
+  fit_sim <- sampling(model_name,
                       data = data,
                       refresh = 0,
                       iter = 1000)
@@ -321,27 +321,28 @@ fake_sim <- function(J, sigma_b, theta_true, sigma_y) {
   significant <- sign(estimates_025) == sign(estimates_975)
   correct_sign <- sign(estimates) == sign(theta_true)
   proportion_significant <- apply(significant, 2, mean)
-  type_s_rate <-
-    1 - apply(significant &
-                correct_sign, 2, mean) / proportion_significant
+  type_s_rate <- ifelse(proportion_significant==0,
+                        0, 
+                        1 - apply(significant & correct_sign, 2, mean)
+                        / proportion_significant)
   mse <- apply((estimates - theta_true) ^ 2, 2, mean)
   rank_corr <- rep(NA, 3)
   for (k in 1:3) {
     rank_corr[k] <- cor(rank(estimates[, k]), rank(theta_true))
   }
   summ <-
-    cbind(J * proportion_significant, type_s_rate, mse, rank_corr)
+    cbind(M * proportion_significant, type_s_rate, mse, rank_corr)
   return(summ)
 }
 
-fake_sim_dist <- function(J, sigma_b, theta_mat, sigma_y) {
+fake_sim_dist <- function(M, sigma_b, theta_mat, sigma_y) {
   n_sims <- nrow(theta_mat)
   summ_all <- array(NA, c(n_sims, 3, 4))
   summ <- array(NA, c(3, 4))
   for (s in 1:n_sims) {
     if (s %% 10 == 0)
       cat(s, "")
-    summ_all[s, , ] <- fake_sim(J, sigma_b, theta_mat[s, ], sigma_y)
+    summ_all[s, , ] <- fake_sim(M, sigma_b, theta_mat[s, ], sigma_y, model_name)
   }
   cat("\n")
   for (k1 in 1:3) {
@@ -365,7 +366,7 @@ fake_summ <-
 for (i in 1:n_grid) {
   sigma_b <- sigma_b_grid[i]
   cat("sigma_b =", sigma_b, ", simulations: ")
-  fake_summ[i, , ] <- fake_sim_dist(J, sigma_b, theta_mat, sigma_y)
+  fake_summ[i, , ] <- fake_sim_dist(J, sigma_b, theta_mat, sigma_y, chickens_hier)
 }
 
 y_shift <-
@@ -660,7 +661,7 @@ fake_summ <-
 for (i in 1:n_grid) {
   sigma_b <- sigma_b_grid[i]
   cat("sigma_b =", sigma_b, ", simulations: ")
-  fake_summ[i, , ] <- fake_sim_dist(J, sigma_b, theta_mat, sigma_y)
+  fake_summ[i, , ] <- fake_sim_dist(J, sigma_b, theta_mat, sigma_y, chickens_hier)
 }
 
 y_shift <-
@@ -712,6 +713,80 @@ for (k in 1:4) {
 }
 dev.off()
 
+
+## Appendix 8: Simulation study with less data -- note that we put some priors on mu and sigma
+## Fake-data simulation, estimation, and comparison
+chickens_hier_priors <- stan_model("chickens-no-corr-hier-priors.stan")
+fake_data_set_sizes = c(5, 10, 20, 38)
+for (M in fake_data_set_sizes) {
+  sigma_y <- 0.04
+  n_sims <- 2
+  theta_mat <- theta[sample(nrow(theta), n_sims), 1:M]
+  sigma_b_grid <- seq(0, 0.10, 0.01)
+  n_grid <- length(sigma_b_grid)
+  fake_summ <-
+    array(NA,
+          c(n_grid, 3, 4),
+          dimnames = list(sigma_b_grid, estimate_names, summ_names))
+  for (i in 1:n_grid) {
+    sigma_b <- sigma_b_grid[i]
+    cat("sigma_b =", sigma_b, ", simulations: ")
+    fake_summ[i, , ] <- fake_sim_dist(M, sigma_b, theta_mat, sigma_y, chickens_hier_priors)
+  }
+  
+  y_shift <-
+    rbind(
+      c(+0.8,+0.7,-0.5),
+      c(+0.01,+0.0345,-0.0301),
+      c(+0.0002,+0.0005,-0.0005),
+      c(-0.04,-0.04,+0.04)
+    )
+  pdf(paste("blackman5c",M,".pdf",sep=""), height = 5.5, width = 7)
+  par(mar = c(3, 3, 2, 1),
+      mgp = c(1.5, .5, 0),
+      tck = -.01)
+  par(mfrow = c(2, 2))
+  for (k in 1:4) {
+    summ <- fake_summ[, , k]
+    y_min <- min(summ)
+    y_max <- max(summ)
+    y_range <-
+      if (k == 1)
+        0.5 * (y_min + y_max) + c(-1, 1) * 0.54 * (y_max - y_min)
+    else if (k == 4)
+      c(0, 1)
+    else
+      c(0, 1.1 * max(summ))
+    plot(
+      range(sigma_b_grid),
+      y_range,
+      xlab = "Scale of sham effects",
+      ylab = summ_abbs[k],
+      xaxs = "i",
+      yaxs = "i",
+      bty = "l",
+      type = "n",
+      main = summ_names[k],
+      cex.main = .9
+    )
+    for (l in 1:3) {
+      lines(sigma_b_grid, summ[, l], col = l)
+      text(
+        sigma_b_grid[n_grid] - 0.001,
+        summ[n_grid, l] + y_shift[k, l],
+        estimate_names[l],
+        adj = 1,
+        cex = .9,
+        col = l
+      )
+    }
+  }
+  dev.off()
+}
+
+
 ## Run Shinystan for diagnostics	
 library("shinystan")	
 my_sso <- launch_shinystan(fit_gauss_proc) 
+
+
