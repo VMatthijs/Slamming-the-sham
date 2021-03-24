@@ -1,19 +1,9 @@
 # Slamming the sham: A Bayesian model for adaptive adjustment with noisy control data
 
-  It is not always clear how to adjust for control data in causal inference,
-  balancing the goals of reducing bias and variance.  We show how, in a setting with repeated
-  experiments, Bayesian hierarchical modeling yields an adaptive procedure that
-  uses the data to determine how much adjustment to perform.
-  The result is a novel analysis with increased statistical efficiency compared to the 
-  default analysis based on difference estimates.
-  We demonstrate this procedure on two real examples, as well as on a series of simulated datasets.
-  We show that the increased efficiency can have real-world consequences in terms of the conclusions
-  that can be drawn from the experiments.
-  We also discuss the relevance of this work to causal inference and statistical design and analysis more
-  generally.
+It is not always clear how to adjust for control data in causal inference, balancing the goals of reducing bias and variance. We show how, in a setting with repeated experiments, Bayesian hierarchical modeling yields an adaptive procedure that uses the data to determine how much adjustment to perform. The result is a novel analysis with increased statistical efficiency compared to the default analysis based on difference estimates. We demonstrate this procedure on two real examples, as well as on a series of simulated datasets. We show that the increased efficiency can have real-world consequences in terms of the conclusions that can be drawn from the experiments. We also discuss the relevance of this work to causal inference and statistical design and analysis more generally.
 
-[Andrew Gelman](http://www.stat.columbia.edu/~gelman/) and [Matthijs Vákár](http://www.columbia.edu/~mv2745/), *Slamming the Sham:
-A Bayesian model for adaptive adjustment with noisy control data.* (2020)
+[Andrew Gelman](http://www.stat.columbia.edu/~gelman/) and [Matthijs Vákár](https://www.uu.nl/medewerkers/MILVakar), *Slamming the Sham:
+A Bayesian model for adaptive adjustment with noisy control data.* In *Statistics in Medicine*. Wiley (2021).
 
 **Corresponding authors**:
 
@@ -33,10 +23,12 @@ With these dependencies present, it should be possible to run the scripts `berli
 
 If you find this repo useful in your research, please consider citing our work:
 
-    @inproceedings{gelman2020slamming,
+    @article{gelman2020slamming,
         title={Slamming the sham: A Bayesian model for adaptive adjustment with noisy control data},
         author={Gelman, Andrew and V{\'{a}}k{\'{a}}r, Matthijs},
-        year={2020}
+        journal={Statistics in Medicine},
+        publisher={Wiley},
+        year={2021}
     }
 
 ## License
